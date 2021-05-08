@@ -6,14 +6,18 @@ const int r3 = 5;
 const int r4 = 4;
 const int c1 = 3;
 const int c2 = 2;
-const int c3 = 1;
+const int c3 = 0;
 void alphkeypad();
-int pos, posy;
-
+int posx, posy;
+int index;
+char array[1024];
 void setup()
 {
-  pos = 0;
+  Serial.begin(9600);
+  posx = 0;
   posy = 0;
+  index = 0;
+
   lcd.begin(16, 2);
   lcd.clear();
   pinMode(r1, OUTPUT);
@@ -24,9 +28,13 @@ void setup()
   pinMode(c2, INPUT);
   pinMode(c3, INPUT);
   //first position
-  
-  lcd.setCursor(pos, posy);
+
+  lcd.setCursor(posx, posy);
   lcd.print("Welcome!");
+
+  for (int i = 0; i < 1024; i++)
+    array[i] = '\0';
+
   delay(1000);
   lcd.clear();
 }
@@ -35,200 +43,232 @@ void loop()
 {
 
   // get the posxition of cursor
-  if (pos > 15 && posy != 1)
+  if (posx == 16 && posy == 0)
   {
-    pos = 0;
+    posx = 0;
     posy = 1;
   }
-  lcd.setCursor(pos, posy);
+  else if (posx == 16 && posy == 1)
+  {
+    lcd.clear();
+
+    int g = 0;
+    for (int i = index - 16; i < index; i++)
+    {
+      lcd.setCursor(g, 0);
+      lcd.print(array[i]);
+      g++;
+    }
+    posx = 0;
+    posy = 1;
+  }
+
+  lcd.setCursor(posx, posy);
 
   alphkeypad();
-  
+  int i = 0;
+  while (array[i] != '\0')
+  {
+    Serial.print(array[i]);
+    i++;
+  }
+  Serial.println();
+  index++;
 }
 
-void alphkeypad(){
+int checker(int c, char l1, char l2, char l3)
+{
+  if (digitalRead(c) == LOW)
+  {
+    lcd.setCursor(posx, posy);
+    lcd.print(l1);
+    array[index] = l1;
+    delay(500);
+    if (digitalRead(c) == LOW)
+    {
+      lcd.setCursor(posx, posy);
+      lcd.print(l2);
+      array[index] = l2;
 
-char a='[';
+      delay(500);
+      if (digitalRead(c) == LOW)
+      {
+        lcd.setCursor(posx, posy);
+        lcd.print(l3);
+        array[index] = l3;
+        delay(500);
+      }
+    }
+    // here we have a or b or c letter
+    // it indicate that a button is pressed
+    posx++;   // inc the posx of cursor
+    return 1; // break out from while loop
+  }
+  return 0;
+}
 
-while(a!='*'){
-  // set col 1->3 to be high 
-digitalWrite(c1,HIGH);  digitalWrite(c2,HIGH);digitalWrite(c3,HIGH);
-//set one row with low and rest with high
-    digitalWrite(r1,LOW);digitalWrite(r2,HIGH);
-    digitalWrite(r3,HIGH);digitalWrite(r4,HIGH);
+void alphkeypad()
+{
 
-// c1 is low then the pressed is either a or b or c 
-// a will be printed
-// we have 0.5 sec delay, if the same button  pressed it will be changed to b then c
+  while (true)
+  {
+    // set col 1->3 to be high
+    digitalWrite(c1, HIGH);
+    digitalWrite(c2, HIGH);
+    digitalWrite(c3, HIGH);
+    //set one row with low and rest with high
+    digitalWrite(r1, LOW);
+    digitalWrite(r2, HIGH);
+    digitalWrite(r3, HIGH);
+    digitalWrite(r4, HIGH);
 
-      if(digitalRead(c1)==LOW){
-   lcd.setCursor(pos, 0);   lcd.print('a');delay(500);
-        if(digitalRead(c1)==LOW){
-       lcd.setCursor(pos, 0);  lcd.print('b');delay(500);
-          if(digitalRead(c1)==LOW){
-        lcd.setCursor(pos, 0);   lcd.print('c');delay(500);}}
-        // here we have a or b or c letter 
-          a='*'; // it indicate that a button is pressed 
-          pos++; // inc the posx of cursor
-          break; // break out from while loop
-        }
-  
-
-  
-  
-    digitalWrite(r1,LOW);digitalWrite(r2,HIGH);
-    digitalWrite(r3,HIGH);digitalWrite(r4,HIGH);
-
-      if(digitalRead(c2)==LOW){
-      lcd.setCursor(pos, 0);lcd.print('d');delay(500);
-        if(digitalRead(c2)==LOW){
-        lcd.setCursor(pos, 0);lcd.print('e');delay(500);
-          if(digitalRead(c2)==LOW){
-          lcd.setCursor(pos, 0);lcd.print('f');delay(500);}}
-      a='*';
-      pos++;
+    // c1 is low then the pressed is either a or b or c
+    // a will be printed
+    // we have 0.5 sec delay, if the same button  pressed it will be changed to b then c
+    if (checker(c1, 'a', 'b', 'c'))
       break;
-     }
-            
 
-  
-   
-    digitalWrite(r1,LOW);digitalWrite(r2,HIGH);
-    digitalWrite(r3,HIGH);digitalWrite(r4,HIGH);
+    digitalWrite(r1, LOW);
+    digitalWrite(r2, HIGH);
+    digitalWrite(r3, HIGH);
+    digitalWrite(r4, HIGH);
 
-      if(digitalRead(c3)==LOW){
-      lcd.setCursor(pos, 0);lcd.print('g');delay(500);
-        if(digitalRead(c3)==LOW){
-       lcd.setCursor(pos, 0);lcd.print('h');delay(500);
-          if(digitalRead(c3)==LOW){
-          lcd.setCursor(pos, 0);lcd.print('i');delay(500);}}
-           a='*';  
-           pos++;
-           break;
+    if (checker(c2, 'd', 'e', 'f'))
+      break;
+
+    digitalWrite(r1, LOW);
+    digitalWrite(r2, HIGH);
+    digitalWrite(r3, HIGH);
+    digitalWrite(r4, HIGH);
+
+    if (checker(c3, 'g', 'h', 'i'))
+      break;
+
+    digitalWrite(r1, HIGH);
+    digitalWrite(r2, LOW);
+    digitalWrite(r3, HIGH);
+    digitalWrite(r4, HIGH);
+
+    if (checker(c1, 'j', 'k', 'l'))
+      break;
+
+    digitalWrite(r1, HIGH);
+    digitalWrite(r2, LOW);
+    digitalWrite(r3, HIGH);
+    digitalWrite(r4, HIGH);
+
+    if (checker(c2, 'm', 'n', 'o'))
+      break;
+
+    digitalWrite(r1, HIGH);
+    digitalWrite(r2, LOW);
+    digitalWrite(r3, HIGH);
+    digitalWrite(r4, HIGH);
+
+    if (checker(c3, 'p', 'q', 'r'))
+      break;
+
+    digitalWrite(r1, HIGH);
+    digitalWrite(r2, HIGH);
+    digitalWrite(r3, LOW);
+    digitalWrite(r4, HIGH);
+
+    if (checker(c1, 's', 't', 'u'))
+      break;
+
+    digitalWrite(r1, HIGH);
+    digitalWrite(r2, HIGH);
+    digitalWrite(r3, LOW);
+    digitalWrite(r4, HIGH);
+
+    if (checker(c2, 'v', 'w', 'x'))
+      break;
+
+    digitalWrite(r1, HIGH);
+    digitalWrite(r2, HIGH);
+    digitalWrite(r3, LOW);
+    digitalWrite(r4, HIGH);
+
+    if (digitalRead(c3) == LOW)
+    {
+      lcd.setCursor(posx, posy);
+      lcd.print('y');
+      array[index] = 'y';
+      delay(500);
+      if (digitalRead(c3) == LOW)
+      {
+        lcd.setCursor(posx, posy);
+        lcd.print('z');
+        array[index] = 'z';
+        delay(500);
       }
-  
-  
-   
-    digitalWrite(r1,HIGH);digitalWrite(r2,LOW);
-    digitalWrite(r3,HIGH);digitalWrite(r4,HIGH);
+      posx++;
+      break;
+    }
 
-      if(digitalRead(c1)==LOW){
-      lcd.setCursor(pos, 0);lcd.print('j');delay(500);
-        if(digitalRead(c1)==LOW){
-       lcd.setCursor(pos, 0);lcd.print('k');delay(500);
-          if(digitalRead(c1)==LOW){
-          lcd.setCursor(pos, 0);lcd.print('l');delay(500);}}
-          a='*';  
-           pos++;
-           break;  
-      }
-  
-     
-    digitalWrite(r1,HIGH);digitalWrite(r2,LOW);
-    digitalWrite(r3,HIGH);digitalWrite(r4,HIGH);
-
-      if(digitalRead(c2)==LOW){
-      lcd.setCursor(pos, 0);lcd.print('m');delay(500);
-        if(digitalRead(c2)==LOW){
-        lcd.setCursor(pos, 0);lcd.print('n');delay(500);
-          if(digitalRead(c2)==LOW){
-          lcd.setCursor(pos, 0);lcd.print('o');delay(500);}}
-           a='*';  
-           pos++;
-           break;
-          }
-           
-  
-  
-  
-     
-    digitalWrite(r1,HIGH);digitalWrite(r2,LOW);
-    digitalWrite(r3,HIGH);digitalWrite(r4,HIGH);
-
-      if(digitalRead(c3)==LOW){
-      lcd.setCursor(pos, 0);lcd.print('p');delay(500);
-        if(digitalRead(c3)==LOW){
-        lcd.setCursor(pos, 0);lcd.print('q');delay(500);
-          if(digitalRead(c3)==LOW){
-          lcd.setCursor(pos, 0);lcd.print('r');delay(500);}}
-          a='*'; 
-          pos++;
-          break;          
-          }
-          
-    
-  
-      
-    digitalWrite(r1,HIGH);digitalWrite(r2,HIGH);
-    digitalWrite(r3,LOW);digitalWrite(r4,HIGH);
-
-      if(digitalRead(c1)==LOW){
-      lcd.setCursor(pos, 0);lcd.print('s');delay(500);
-        if(digitalRead(c1)==LOW){
-        lcd.setCursor(pos, 0);lcd.print('t');delay(500);
-          if(digitalRead(c1)==LOW){
-          lcd.setCursor(pos, 0);lcd.print('u');delay(500);}}
-          a='*'; 
-          pos++;
-          break;
-          }
-         
-    
-  
-     
-    digitalWrite(r1,HIGH);digitalWrite(r2,HIGH);
-    digitalWrite(r3,LOW);digitalWrite(r4,HIGH);
-
-      if(digitalRead(c2)==LOW){
-      lcd.setCursor(pos, 0);lcd.print('v');delay(500);
-        if(digitalRead(c2)==LOW){
-        lcd.setCursor(pos, 0);lcd.print('w');delay(500);
-          if(digitalRead(c2)==LOW){
-         lcd.setCursor(pos, 0);lcd.print('x');delay(500);}}
-          a='*'; 
-          pos++;
-          break;}
-         
-    
-  
-    digitalWrite(r1,HIGH);digitalWrite(r2,HIGH);
-    digitalWrite(r3,LOW);digitalWrite(r4,HIGH);
-      if(digitalRead(c3)==LOW){
-      lcd.setCursor(pos, 0);lcd.print('y');delay(500);
-        if(digitalRead(c3)==LOW){
-        lcd.setCursor(pos, 0);lcd.print('z');delay(500);
-          }
-         a='*'; 
-          pos++;
-          break;
-          }
-        
     //CLEAR
-     digitalWrite(r1,HIGH);digitalWrite(r2,HIGH);
-    digitalWrite(r3,HIGH);digitalWrite(r4,LOW);
+    digitalWrite(r1, HIGH);
+    digitalWrite(r2, HIGH);
+    digitalWrite(r3, HIGH);
+    digitalWrite(r4, LOW);
 
-      if(digitalRead(c1)==LOW){
-        pos--;
-     lcd.setCursor(pos, 0);
-     lcd.print(' ');
-     delay(500);
-         
-          a='*'; 
-          break;}
-         
-    
-  // SPACE
-    digitalWrite(r1,HIGH);digitalWrite(r2,HIGH);
-    digitalWrite(r3,HIGH);digitalWrite(r4,LOW);
-if(digitalRead(c2)==LOW){
-     lcd.setCursor(pos, 0);lcd.print(' ');delay(500);
-        
-          a='*'; 
-          pos++;
-          break;}
-        
+    if (digitalRead(c1) == LOW)
+    {
+      if (posx == 0 && posy == 0)
+      {
+        break;
+      }
+      if (posx == 0 && posy == 1)
+      {
+        posx = 16;
+        posy = 0;
+      }
+      posx--;
+      lcd.setCursor(posx, posy);
+      lcd.print(' ');
+      delay(500);
 
- 
-  }//WHILE ENDING
+      array[--index] = ' ';
+      index--;
+      break;
+    }
 
-}//KEYPAD  ENDING
+    // SPACE
+    digitalWrite(r1, HIGH);
+    digitalWrite(r2, HIGH);
+    digitalWrite(r3, HIGH);
+    digitalWrite(r4, LOW);
+    if (digitalRead(c2) == LOW)
+    {
+      lcd.setCursor(posx, posy);
+      lcd.print(' ');
+      delay(500);
+
+      array[index] = ' ';
+      posx++;
+      break;
+    }
+
+    // ENTER
+    digitalWrite(r1, HIGH);
+    digitalWrite(r2, HIGH);
+    digitalWrite(r3, HIGH);
+    digitalWrite(r4, LOW);
+    if (digitalRead(c3) == LOW)
+    {
+      lcd.clear();
+      posx = 0;
+      posy = 0;
+      lcd.setCursor(posx, posy);
+
+      // call function that convert text2speech
+      for (int i = 0; i < 1024; i++)
+        array[i] = '\0';
+      index = -1;
+      Serial.println("sent completed");
+      delay(500);
+      break;
+    }
+  } //WHILE ENDING
+
+} //KEYPAD  ENDING
