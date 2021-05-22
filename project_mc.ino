@@ -1,16 +1,24 @@
+
+#include <english.h>
+#include <sound.h>
+#include <TTS.h>
+
+
 #include <LiquidCrystal.h>
-LiquidCrystal lcd(13, 12, 11, 10, 9, 8);
+TTS text2speech (10);  // speech output is digital pin 10
+
+LiquidCrystal lcd(13, 12, A5, A4,A3 ,A2 );
 const int r1 = 7;
 const int r2 = 6;
 const int r3 = 5;
 const int r4 = 4;
 const int c1 = 3;
 const int c2 = 2;
-const int c3 = 0;
+const int c3 = 8;
 void alphkeypad();
 int posx, posy;
 int index;
-char array[1024];
+char array[32];
 void setup()
 {
   Serial.begin(9600);
@@ -32,10 +40,10 @@ void setup()
   lcd.setCursor(posx, posy);
   lcd.print("Welcome!");
 
-  for (int i = 0; i < 1024; i++)
+  for (int i = 0; i < 32; i++)
     array[i] = '\0';
 
-  delay(1000);
+  _delay_ms(1000);
   lcd.clear();
 }
 
@@ -105,6 +113,36 @@ int checker(int c, char l1, char l2, char l3)
     return 1; // break out from while loop
   }
   return 0;
+}
+void Text2Speech(){
+  int i =0;
+ 
+  // to do : get the real size of the input
+  int mxSize=32;
+  while(i<mxSize)
+  {
+    // to do : get the real size of the max word
+    const int mxWordSize=20;
+    char str[mxWordSize];
+    int idx = 0;
+    while((array[i]>=65&&array[i]<=90)||(array[i]>=97&&array[i]<=122)) // if it's not space 
+    {
+      str[idx++] = array[i++];
+    }
+    i++;
+    for(int j=0;j<idx;j++)
+      Serial.print(str[j]);
+    Serial.print("\n");
+    
+    text2speech.setPitch(6); //higher values = lower voice pitch
+    text2speech.sayText(str);
+ 
+ 
+    delay(1000);
+    if(array[i]=='\0')break; // when reach to end of input will break
+  }
+  Serial.println("finish...............");
+  
 }
 
 void alphkeypad()
@@ -261,8 +299,9 @@ void alphkeypad()
       posy = 0;
       lcd.setCursor(posx, posy);
 
+      Text2Speech();
       // call function that convert text2speech
-      for (int i = 0; i < 1024; i++)
+      for (int i = 0; i < 32; i++)
         array[i] = '\0';
       index = -1;
       Serial.println("sent completed");
@@ -271,4 +310,4 @@ void alphkeypad()
     }
   } //WHILE ENDING
 
-} //KEYPAD  ENDING
+} //KEYPA
